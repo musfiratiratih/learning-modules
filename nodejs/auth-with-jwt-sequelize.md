@@ -66,9 +66,9 @@ Pada step ini, setiap kali ada perubahan pada project `perpustakaan` makan nodem
 
 ```
 perpustakaan /
-|-routes
-  |-home.js
-|-index.js
+|- routes
+   |- home.js
+|- index.js
 ```
 
 - Tambahkan potongan kode berikut pada `routes/routes.js`
@@ -110,9 +110,9 @@ Selamat datang di Perpustakaan
 - Buat file `auth.js` pada folder `routes`
 
 ```
-|-routes
-  |-auth.js
-  |-home.js
+|- routes
+   |- auth.js
+   |- home.js
 ```
 
 - Inisialisasi router express lalu export `router`
@@ -260,9 +260,9 @@ module.exports = router
 - Buat file baru pada root directory dengan nama `verify-token.js`
 
 ```
-|-routes/
-|-index.js
-|-verify-token.js
+|- routes/
+|- index.js
+|- verify-token.js
 ```
 
 - Tuliskan potongan kode berikut (boleh tanpa komentar)
@@ -319,3 +319,147 @@ module.exports = router
 - Jika token sesuai maka akan mengirim response data user
 - Jika token tidak sesuai maka mengirim response `Forbidden`
 - Jika token tidak ada maka mengirim response `Unauthorize`
+
+
+## Controller
+
+Penggunaan controller ditujukan agar code lebih mudah di baca dan maintain. Controller sendiri berisi logic utama dari sebuah end point.
+
+- Buat folder baru pada root directory dengan nama `controllers`
+
+```
+|- controllers/
+|- routes/
+|- index.js
+|- verify-token.js
+```
+
+### Home Controller
+
+- Buat file baru pada folder `controllers` dengan nama `home.js`
+
+```
+|- controllers/
+   |- home.js
+```
+
+- Buat method yang siap di export pada `home.js` dengan name `homeController`
+
+```js
+module.exports = {
+    index(req, res) {
+        return res.send('Selamat datang di Perpustakaan')
+    }
+}
+```
+
+- Modifikasi `routes/home.js` untuk menggunakan controller
+
+```js
+const express = require('express')
+
+const verifyToken = require('./../verify-token')
+const controller = require('./../controllers/home') // <--
+
+const router = express.Router()
+
+router.get('/', controller.index) // <--
+
+router.get('/home', verifyToken, function (req, res) {
+    res.send({
+        user: req.user
+    })
+})
+
+module.exports = router
+```
+
+- Lakukan ujicoba terlebih dahulu pada postman
+- Lakukan hal yang sama untuk route `/home`
+- Modifikasi `/controllers/home.js`
+
+```js
+module.exports = {
+    index(req, res) {
+        return res.send('Selamat datang di Perpustakaan')
+    },
+
+    home(req, res) { // <--
+        return res.send({
+            user: req.user
+        })
+    }
+}
+```
+
+- Modifikasi `/routes/home.js`
+
+```js
+const express = require('express')
+
+const verifyToken = require('./../verify-token')
+const controller = require('./../controllers/home')
+
+const router = express.Router()
+
+router.get('/', controller.index)
+
+router.get('/home', verifyToken, controller.home) // <--
+
+module.exports = router
+```
+
+- Ujicoba route `http://localhost:3000/home`
+- Lanjutkan dengan dengan file route lainnya
+- File baru pada folder `controllers` dengan nama `auth.js`
+
+```
+|- controllers/
+   |- home.js
+   |- auth.js
+```
+
+- Pindah logic yang ada di `/routes/auth.js` ke `/controllers/auth.js` seperti dibawah
+
+```js
+const { sign } = require("jsonwebtoken")
+
+module.exports = {
+    login(req, res) {
+        let credentials = {
+            username: req.body.username,
+            password: req.body.password
+        }
+    
+        if (!credentials.username || !credentials.password) {
+            return res.send('Username dan/atau Password harus diisi!')
+        }
+    
+        if (credentials.username != 'admin' || credentials.password != 'admin') {
+            return res.send('Username dan/atau Password tidak sesuai')
+        }
+    
+        token = sign(credentials, 'verysecretkey')
+        
+        return res.send({
+            token: token,
+            data: credentials
+        })
+    }
+}
+```
+
+- Hapus logic pada file `/routes/auth.js`
+
+```js
+const express = require('express')
+
+const controller = require('./../controllers/auth')
+
+const router = express.Router()
+
+router.post('/login', controller.login)
+
+module.exports = router
+```
+
