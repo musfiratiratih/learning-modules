@@ -214,3 +214,108 @@ app.listen(3000, function () {
 ```
 
 - Silahkan lakuan ujicoba saat `username` kosong atau bukan "admin"
+
+## Penggunaan JSON Web Token untuk Restrict Endpoint
+
+Dalam dunia kerja, banyak penyedia layanan yang menggunakan API sebagai produk mereka. Dan harus ada restriction terhadap beberapa Endpoint untuk keperluan commercial/private app/dsb.
+
+- Install package `jsonwebtoken`
+
+```
+$ npm install jsonwebtoken
+```
+
+- Modifikasi `routes/auth.js` seperti di bawah ini
+
+```js
+const express = require('express')
+const { sign } = require('jsonwebtoken') // <--
+const router = express.Router()
+
+router.post('/login', function (req, res) {
+    let credentials = {
+        username: req.body.username,
+        password: req.body.password
+    }
+
+    if (!credentials.username || !credentials.password) {
+        return res.send('Username dan/atau Password harus diisi!')
+    }
+
+    if (credentials.username != 'admin' || credentials.password != 'admin') {
+        return res.send('Username dan/atau Password tidak sesuai')
+    }
+
+    token = sign(credentials, 'verysecretkey') // <--
+    
+    return res.send({ // <--
+        token: token,
+        data: credentials
+    })
+})
+
+module.exports = router
+```
+
+- Buat file baru pada root directory dengan nama `verify-token.js`
+
+```
+|-routes/
+|-index.js
+|-verify-token.js
+```
+
+- Tuliskan potongan kode berikut (boleh tanpa komentar)
+
+```js
+const { verify } = require("jsonwebtoken")
+
+module.exports = function (req, res, next) {
+    // mendapatkan token dari header
+    const authHeader = req.headers['authorization']
+
+    // memecah Bearer token
+    const token = authHeader && authHeader.split(' ')[1]
+    
+    // cek jika token tidak ada
+    if (token == null) return res.sendStatus(401)
+
+    verify(token, 'verysecretkey', function (err, user) {
+        console.log(err)
+        if (err) return res.sendStatus(403)
+
+        // menyimpan data user ke request
+        req.user = user
+
+        // lanjut eksekusi route yang sebenarnya
+        next()
+    })
+}
+```
+
+- Modifikasi `routes/home.js`
+
+```js
+const express = require('express')
+const verifyToken = require('./../verify-token') // <--
+const router = express.Router()
+
+router.get('/', function (req, res) {
+    res.send('Selamat datang di Perpustakaan')
+})
+
+router.get('/home', verifyToken, function (req, res) { // <--
+    res.send({
+        user: req.user
+    })
+})
+
+module.exports = router
+```
+
+- Lakukan ujicoba pada postman dengan mengakses `/home`
+- Tambahkan Auth dengan cara menuju pada tab `Auth` lalu pilih tipe autentikasi `Bearer Token`
+- Masukan token hasil dari login ke field token
+- Jika token sesuai maka akan mengirim response data user
+- Jika token tidak sesuai maka mengirim response `Forbidden`
+- Jika token tidak ada maka mengirim response `Unauthorize`
