@@ -463,3 +463,252 @@ router.post('/login', controller.login)
 module.exports = router
 ```
 
+## Registrasi User
+
+- Buat route baru pada file `/routes/auth.js` dengan endpoint `/register` dan arahkan ke `controler.register`
+
+```js
+const express = require('express')
+
+const controller = require('./../controllers/auth')
+
+const router = express.Router()
+
+router.post('/login', controller.login)
+router.post('/register', controller.register)
+
+module.exports = router
+```
+
+- Tambah method controller baru pada file `/controllers/auth.js` dengan nama `register` lalu tuliskan kode berikut
+
+```js
+const { sign } = require("jsonwebtoken")
+
+module.exports = {
+    login(req, res) {
+        ...
+    },
+
+    register(req, res) {
+        let user = {
+            name: req.body.name,
+            username: req.body.username,
+            password: req.body.password,
+            address: req.body.address
+        }
+
+        return res.send({
+            data: user
+        })
+    }
+}
+```
+
+- Ujicoba endpoint melalui postman
+
+## Menyimpan User ke DB dengan MySql Sequelize
+
+### Konfigurasi MySql dan Sequelize
+
+Pada modul ini akan menggunakan database `mysql` dengan package `mysql2`. Pastikan MySql sudah terinstall dan siapkan username dan password. Default dari username MySql pada XAMPP adalah
+
+| username | password |
+|---|---|
+| root |  |
+
+- Install package yang dibutuhkan
+
+```
+$ npm install mysql2 sequelize
+```
+
+- Install sequelize-cli secara global agar mempermudah inisialisasi sequelize
+
+```
+$ npm install -g sequelize-cli
+```
+
+- Inisialisasi sequelize
+
+```
+$ sequelize init
+```
+
+- Perhatikan perubahan yang terjadi pada project
+
+```
+|- config/
+   |- config.json
+|- controllers/
+|- migrations/
+|- models/
+   |- index.js
+|- routes/
+|- seeders/
+|- index.js
+|- verify-token.js
+```
+
+- Buka file `/config/config.json` dan sesuaikan dengan koneksi ke database kalian
+- Contoh modifikasi file `/config/config.json`
+
+```json
+{
+  "development": {
+    "username": "root",
+    "password": null,
+    "database": "node_perpustakaan",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "node_perpustakaan",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "node_perpustakaan",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
+```
+
+- Buat database dengan nama sesuai dengan pada file `/config/config.json`
+- Selanjutnya membuat model User dengan command berikut
+
+```
+$ sequelize model:create --name User --attributes name:string,username:string,password:string,address:text
+```
+
+- Command tersebut akan membuat dua file baru pada folder `/models` dan `/migrations`
+- Modifikasi file `/migrations/<timestamp>-create-user.js` untuk mendefiniskan kolom unik dan kolom yang tidak boleh `null`
+
+```js
+'use strict';
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('Users', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      },
+      name: {
+        allowNull: false, // <--
+        type: Sequelize.STRING
+      },
+      username: {
+        allowNull: false, // <--
+        type: Sequelize.STRING,
+        unique: true // <--
+      },
+      password: {
+        allowNull: false, // <--
+        type: Sequelize.STRING
+      },
+      address: {
+        allowNull: false, // <--
+        type: Sequelize.TEXT
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      }
+    });
+  },
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable('Users');
+  }
+};
+```
+
+- Setelah itu lakukan migrasi untuk membuat table user pada database
+
+```
+$ sequelize db:migrate
+```
+
+- Setelah command berhasil, pastikan table `Users` sudah terbuat di database
+- Pada tahap ini proses konfigurasi sudah selesai
+
+### Menyimpan User ke Database
+
+- Modifikasi file `/controllers/auth.js` pada method `register` untuk menyimpan user ke database
+
+```js
+const { sign } = require("jsonwebtoken")
+const models = require('./../models') // <--
+
+module.exports = {
+    login(req, res) {
+        ...
+    },
+
+    async register(req, res) { // <--
+        let user = await models.User.create({ // <--
+            name: req.body.name,
+            username: req.body.username,
+            password: req.body.password,
+            address: req.body.address
+        })
+
+        return res.send({
+            data: user
+        })
+    }
+}
+```
+
+- Lakukan ujicoba pada postman, lalu cek data pada table User.
+
+## Login berdasarkan User di Database
+
+- Modifikasi file `/controllers/auth.js` pada method `auth` untuk mendapatkan user dari database dan melakukan validasi token
+
+```js
+const { sign } = require("jsonwebtoken")
+const models = require('./../models')
+
+module.exports = {
+    async login(req, res) { // <--
+        let credentials = {
+            username: req.body.username,
+            password: req.body.password
+        }
+    
+        if (!credentials.username || !credentials.password) {
+            return res.send('Username dan/atau Password harus diisi!')
+        }
+    
+        let user = await models.User.findOne({ // <--
+            where: credentials
+        })
+
+        if (!user) return res.send('Username dan/atau Password tidak sesuai') // <--
+    
+        token = sign(credentials, 'verysecretkey')
+        
+        return res.send({
+            token: token,
+            data: credentials
+        })
+    },
+
+    async register(req, res) {
+        ...
+    }
+}
+```
+
+- Lakukan ujicoba di postman dan route yang membutuhkan token 
