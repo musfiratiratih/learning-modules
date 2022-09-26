@@ -80,4 +80,85 @@ app.get("/", (req, res) => {
 app.listen(3000, () => console.log("app running on http://localhost:3000"));
 ```
 17. Selanjutkan kita siapkan file html pada folder `views` dengan nama `index.ejs`
-<script src="https://gist.github.com/musfiratiratih/1440a67b69ef4d98da2241388dec59c5.js"></script>
+```html
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>To Do Apps | Express & MySql2</title>
+
+		<script src="https://cdn.tailwindcss.com"></script>
+	</head>
+	<body class="bg-gray-200">
+		<header class="mb-8 flex items-center justify-center py-4 bg-white w-full shadow-xl">
+			<h1 class="text-xl font-bold uppercase">Todo App</h1>
+		</header>
+
+		<div class="mx-auto flex items-center justify-center max-w-md">
+			<div class="flex flex-col items-stretch w-screen">
+				<div class="mb-8">
+					<p class="text-center text-gray-600">
+						Hi, <strong>User</strong>! What do you want todo next?
+					</p>
+				</div>
+				<div class="mb-8">
+					<form action="/tasks" method="post">
+						<div class="flex items-center">
+							<input
+								type="text"
+								name="task"
+								placeholder="Things need todo asap!"
+								class="flex-1 px-4 py-2 w-full bg-white rounded-full text-sm focus:outline-none focus:shadow-lg"
+							/>
+							<button
+								class="ml-4 px-4 py-2 rounded-full bg-sky-500 text-white font-bold text-sm uppercase focus:outline-none focus:shadow-lg"
+							>
+								Add Task
+							</button>
+						</div>
+					</form>
+				</div>
+				<div class="mb-8">
+					<form
+						action="/tasks/1"
+						method="post"
+						class="block flex items-center pl-4 pr-3 py-2 bg-white shadow-lg rounded-full"
+					>
+						<div class="flex-1 mr-2 text-gray-800">Install expressjs</div>
+						<button
+							name="action"
+							value="done"
+							class="text-xs font-bold bg-gray-300 text-gray-500 rounded-full px-2 py-1"
+						>
+							Mark as Done
+						</button>
+					</form>
+					<form
+						action="/tasks/1"
+						method="post"
+						class="block flex items-center pl-4 pr-3 py-2 bg-white shadow-lg rounded-full"
+					>
+						<div class="flex-1 mr-2 text-gray-800">Install nodejs</div>
+						<button name="action" value="undone" class="text-xs font-bold bg-sky-500 text-white rounded-full px-2 py-1">
+							Done!
+						</button>
+						<button
+							name="action"
+							value="delete"
+							class="ml-2 text-xs font-bold bg-red-500 text-white rounded-full px-2 py-1"
+						>
+							Delete
+						</button>
+					</form>
+				</div>
+				<div class="mb-8">
+					<form action="/logout" method="post" class="block text-center">
+						<button class="text-red-400 text-sm underline">Logout!</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+```
