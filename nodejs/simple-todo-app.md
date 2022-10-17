@@ -47,9 +47,6 @@ npm install -D nodemon
 import express, { urlencoded } from "express";
 import flash from 'express-flash';
 import session from 'express-session';
-import { authController } from "./controllers/auth.controller.js";
-import { tasksController } from "./controllers/tasks.controller.js";
-import { authMiddleware } from "./middlewares/auth.middleware.js";
 
 // inisiasi aplikasi express
 const app = express();
@@ -162,3 +159,5 @@ app.listen(3000, () => console.log("app running on http://localhost:3000"));
 	</body>
 </html>
 ```
+18. Dari sini, kita dapat mencoba menjalankan project dengan menjalankan `npm run dev`
+19. Kemudian buka halaman http://localhost:3000 pada browser
